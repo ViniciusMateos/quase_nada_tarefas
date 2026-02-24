@@ -49,7 +49,6 @@ function App() {
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   
-  // Novos estados para a senha
   const [showPassword, setShowPassword] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
 
@@ -105,7 +104,6 @@ function App() {
     setSession(null);
   };
 
-  // Verifica o status do Caps Lock
   const checkCapsLock = (e) => {
     if (e.getModifierState) {
       setCapsLockOn(e.getModifierState('CapsLock'));
@@ -202,7 +200,6 @@ function App() {
         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-gray-800 p-8 rounded-2xl w-full max-w-sm border border-gray-700 shadow-2xl relative z-50">
           <h1 className="text-3xl font-bold text-center mb-8 text-laranja">Quase Nada Tarefas</h1>
           <form onSubmit={handleLogin} className="mb-6 relative z-50">
-            
             <div className="relative mb-2">
               <input 
                 id="password-input"
@@ -219,11 +216,7 @@ function App() {
                 onPointerDown={(e) => e.stopPropagation()}
                 className="w-full bg-gray-900 text-white p-4 pr-12 rounded-lg border border-gray-600 focus:outline-none focus:border-laranja focus:ring-1 focus:ring-laranja"
               />
-              <button 
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white focus:outline-none"
-              >
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white focus:outline-none">
                 {showPassword ? (
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
                 ) : (
@@ -231,27 +224,16 @@ function App() {
                 )}
               </button>
             </div>
-            
-            {/* Mensagens de Feedback */}
             <div className="h-6 mb-4 flex justify-center items-center">
-              {capsLockOn ? (
-                <p className="text-yellow-500 text-xs font-bold uppercase tracking-wider">⚠️ Caps Lock ativado</p>
-              ) : loginError ? (
-                <p className="text-red-500 text-sm">{loginError}</p>
-              ) : null}
+              {capsLockOn ? <p className="text-yellow-500 text-xs font-bold uppercase tracking-wider">⚠️ Caps Lock ativado</p> : loginError ? <p className="text-red-500 text-sm">{loginError}</p> : null}
             </div>
-
             <motion.button whileTap={{ scale: 0.95 }} type="submit" disabled={isLoggingIn} className="w-full bg-laranja hover:opacity-80 text-white font-bold py-4 rounded-lg transition-opacity relative z-50">
               {isLoggingIn ? 'Carregando...' : 'Entrar'}
             </motion.button>
           </form>
-          
           <div className="flex items-center my-6">
-            <div className="flex-1 border-t border-gray-700"></div>
-            <span className="px-4 text-gray-400 text-sm">ou</span>
-            <div className="flex-1 border-t border-gray-700"></div>
+            <div className="flex-1 border-t border-gray-700"></div><span className="px-4 text-gray-400 text-sm">ou</span><div className="flex-1 border-t border-gray-700"></div>
           </div>
-
           <motion.button whileTap={{ scale: 0.95 }} onClick={handleDemoMode} disabled={isLoggingIn} className="w-full bg-gray-900 hover:bg-gray-700 border border-gray-600 text-gray-300 font-bold py-4 rounded-lg transition-colors relative z-50">
             Ambiente de Demonstração
           </motion.button>
@@ -265,8 +247,9 @@ function App() {
     <div className="bg-gray-900 text-gray-100 h-screen flex flex-col antialiased overflow-hidden" {...handlers}>
       
       <div className="max-w-2xl mx-auto w-full p-4 md:p-8 md:pb-4 pb-2 flex-shrink-0 z-10 bg-gray-900 relative">
+        {/* BOTÃO DESKTOP (No topo, escondido no mobile) */}
         {session.type === 'demo' && (
-          <button onClick={logoutDemo} className="absolute top-4 right-4 md:top-8 md:right-8 text-sm text-red-400 hover:text-red-300">Sair da Demo</button>
+          <button onClick={logoutDemo} className="hidden md:block absolute top-8 right-8 text-sm text-red-400 hover:text-red-300 font-bold transition-colors">Sair da Demo</button>
         )}
         <h1 className="text-3xl font-bold text-center mb-6 text-laranja">Quase Nada Tarefas</h1>
         
@@ -285,6 +268,15 @@ function App() {
             <TaskList tasks={tasks} onEdit={openModal} onDelete={(task) => setTaskToDelete(task)} onToggleComplete={handleToggleComplete} />
           </motion.div>
         </AnimatePresence>
+
+        {/* BOTÃO MOBILE (No final da lista, visível apenas no mobile) */}
+        {session.type === 'demo' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="md:hidden py-8 flex justify-center pb-20">
+            <button onClick={logoutDemo} className="text-red-500 bg-red-950/30 border border-red-900/50 px-6 py-2 rounded-full text-sm font-bold hover:bg-red-900/50 transition-colors">
+              Sair da Demo
+            </button>
+          </motion.div>
+        )}
       </div>
 
       <AnimatePresence>

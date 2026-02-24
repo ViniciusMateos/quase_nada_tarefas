@@ -5,7 +5,6 @@ function WeekNavigator({ currentDate, changeWeek, setAbsoluteDate }) {
   const [weekRangeText, setWeekRangeText] = useState("Carregando...");
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   
-  // Estados para controlar em qual "camada" do painel estamos
   const [pickerView, setPickerView] = useState('weeks'); // 'weeks' | 'months' | 'years'
   const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
   const [pickerMonth, setPickerMonth] = useState(new Date().getMonth());
@@ -13,7 +12,6 @@ function WeekNavigator({ currentDate, changeWeek, setAbsoluteDate }) {
   const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
   const fullMonths = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
-  // Atualiza o texto do botão principal com base na semana atual
   useEffect(() => {
     const monday = new Date(currentDate);
     const day = monday.getDay();
@@ -27,7 +25,6 @@ function WeekNavigator({ currentDate, changeWeek, setAbsoluteDate }) {
     setWeekRangeText(`${monday.toLocaleDateString('pt-BR', options)} - ${sunday.toLocaleDateString('pt-BR', options)}`);
   }, [currentDate]);
 
-  // Função para abrir o painel sempre focado no mês/ano que está na tela
   const openPicker = () => {
     setPickerYear(currentDate.getFullYear());
     setPickerMonth(currentDate.getMonth());
@@ -50,7 +47,6 @@ function WeekNavigator({ currentDate, changeWeek, setAbsoluteDate }) {
     setPickerView('months');
   };
 
-  // Lógica pesada: Calcula exatamente quais semanas pertencem àquele mês e ano selecionados
   const getWeeksForMonth = (year, month) => {
     const weeks = [];
     const firstDay = new Date(year, month, 1);
@@ -59,12 +55,10 @@ function WeekNavigator({ currentDate, changeWeek, setAbsoluteDate }) {
 
     let currentMonday = new Date(startMonday);
     
-    // Um mês nunca passa de 6 semanas
     for (let i = 0; i < 6; i++) {
       const sunday = new Date(currentMonday);
       sunday.setDate(currentMonday.getDate() + 6);
 
-      // Se a segunda ou o domingo da semana cair no mês selecionado, ela pertence a ele
       if (currentMonday.getMonth() === month || sunday.getMonth() === month) {
         weeks.push({ monday: new Date(currentMonday), sunday: new Date(sunday) });
       }
@@ -73,7 +67,6 @@ function WeekNavigator({ currentDate, changeWeek, setAbsoluteDate }) {
     return weeks;
   };
 
-  // Renderiza o miolo do modal dependendo do que o usuário tá escolhendo
   const renderPickerContent = () => {
     if (pickerView === 'years') {
       const yearsList = Array.from({length: 12}, (_, i) => pickerYear - 4 + i);
@@ -106,8 +99,6 @@ function WeekNavigator({ currentDate, changeWeek, setAbsoluteDate }) {
       return (
          <motion.div key="weeks" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.2 }} className="flex flex-col gap-3">
            {weeks.map((w, i) => {
-             // Descobre qual é a semana do dia de hoje (para destacar)
-             const today = new Date();
              const currentAppMonday = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - currentDate.getDay() + (currentDate.getDay() === 0 ? -6 : 1));
              const isSelected = w.monday.getTime() === currentAppMonday.getTime();
              
@@ -131,7 +122,6 @@ function WeekNavigator({ currentDate, changeWeek, setAbsoluteDate }) {
 
   return (
     <>
-      {/* NAVEGAÇÃO SUPERIOR */}
       <div className="flex items-center justify-between bg-gray-800 p-4 rounded-lg mb-6 border border-gray-700">
         <motion.button whileTap={{ scale: 0.8, backgroundColor: "#ff8234", color: "#fff" }} onClick={() => changeWeek(-7)} className="p-2 rounded-full hover:bg-gray-700 transition-colors text-white">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
@@ -151,17 +141,13 @@ function WeekNavigator({ currentDate, changeWeek, setAbsoluteDate }) {
         </motion.button>
       </div>
 
-      {/* MODAL CUSTOMIZADO DE SEMANAS */}
       <AnimatePresence>
         {isPickerOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
             <motion.div initial={{ scale: 0.8, y: 50 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.8, y: 50 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="bg-gray-800 p-6 rounded-xl w-full max-w-sm border border-gray-700 shadow-2xl flex flex-col max-h-[90vh]">
               
-              {/* HEADER DO MODAL - NAVEGAÇÃO DE NÍVEIS */}
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex justify-between items-center mb-6 flex-shrink-0">
                 <div className="flex gap-2 items-center">
-                  
-                  {/* Clicar no ano volta para o grid de Anos */}
                   {pickerView !== 'years' && (
                     <button onClick={() => setPickerView('years')} className="text-xl font-bold text-gray-400 hover:text-white transition-colors">
                       {pickerYear}
@@ -171,7 +157,6 @@ function WeekNavigator({ currentDate, changeWeek, setAbsoluteDate }) {
                   
                   {pickerView === 'weeks' && <span className="text-xl text-gray-500">•</span>}
                   
-                  {/* Clicar no mês volta para o grid de Meses */}
                   {pickerView === 'weeks' && (
                     <button onClick={() => setPickerView('months')} className="text-xl font-bold text-laranja hover:opacity-80 transition-opacity">
                       {fullMonths[pickerMonth]}
@@ -190,8 +175,8 @@ function WeekNavigator({ currentDate, changeWeek, setAbsoluteDate }) {
                 </button>
               </div>
 
-              {/* CORPO DO MODAL (Anima troca entre Ano/Mês/Semanas) */}
-              <div className="flex-1 overflow-y-auto pr-1">
+              {/* CORREÇÃO AQUI: Adicionei padding (p-2) e overflow-x-hidden */}
+              <div className="flex-1 overflow-y-auto p-2 overflow-x-hidden">
                 <AnimatePresence mode="wait">
                   {renderPickerContent()}
                 </AnimatePresence>
