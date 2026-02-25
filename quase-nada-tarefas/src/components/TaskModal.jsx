@@ -34,6 +34,7 @@ function TaskModal({ task, onSave, onClose }) {
     }
   };
   
+  // Adicionei "clean-scroll" aqui para usarmos na textarea
   const baseInputClass = "w-full bg-gray-900 text-white p-3 rounded-lg border outline-none transition-colors";
 
   const dropdownVariants = {
@@ -43,8 +44,19 @@ function TaskModal({ task, onSave, onClose }) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-      <motion.div initial={{ scale: 0.8, opacity: 0, y: 50 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.8, opacity: 0, y: 50 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="bg-gray-800 p-6 rounded-xl w-full max-w-md border border-gray-700 shadow-2xl">
-        <h3 className="text-xl font-bold mb-4 text-laranja">{task ? 'Editar Tarefa' : 'Nova Tarefa'}</h3>
+      
+      {/* 1. Mágica do Scroll (Injetando o CSS aqui dentro mesmo) */}
+      <style>{`
+        .clean-scroll::-webkit-scrollbar { width: 6px; }
+        .clean-scroll::-webkit-scrollbar-track { background: transparent; }
+        .clean-scroll::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 10px; }
+      `}</style>
+
+      {/* 2. MUDANÇA: Troquei max-w-md por max-w-3xl para o modal crescer pros lados */}
+      <motion.div initial={{ scale: 0.8, opacity: 0, y: 50 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.8, opacity: 0, y: 50 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} 
+        className="bg-gray-800 p-8 rounded-xl w-full max-w-3xl border border-gray-700 shadow-2xl"
+      >
+        <h3 className="text-2xl font-bold mb-6 text-laranja">{task ? 'Editar Tarefa' : 'Nova Tarefa'}</h3>
         
         <form onSubmit={handleSubmit} autoComplete="off">
           <div className="mb-4">
@@ -66,13 +78,13 @@ function TaskModal({ task, onSave, onClose }) {
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className={`${baseInputClass} flex justify-between items-center`}
             >
-               <span className={`flex items-center gap-2 ${currentOption.colorClass}`}>
-                 <span className={`w-3 h-3 rounded-full bg-current opacity-80`}></span>
-                 {currentOption.label}
-               </span>
-               <motion.svg animate={{ rotate: isDropdownOpen ? 180 : 0 }} xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-               </motion.svg>
+                <span className={`flex items-center gap-2 ${currentOption.colorClass}`}>
+                  <span className={`w-3 h-3 rounded-full bg-current opacity-80`}></span>
+                  {currentOption.label}
+                </span>
+                <motion.svg animate={{ rotate: isDropdownOpen ? 180 : 0 }} xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </motion.svg>
             </motion.button>
 
             <AnimatePresence>
@@ -88,12 +100,13 @@ function TaskModal({ task, onSave, onClose }) {
             </AnimatePresence>
           </div>
 
+          {/* 3. MUDANÇA: Aumentei rows para 12 e adicionei a classe clean-scroll */}
           <div className="mb-6 z-10 relative">
             <label htmlFor="task-notes" className="block text-sm font-medium text-gray-400 mb-1">Anotações</label>
             <motion.textarea 
               variants={inputFocusVariants} initial="rest" whileFocus="focus"
-              id="task-notes" rows="3" autoComplete="off"
-              className={`${baseInputClass} resize-none`}
+              id="task-notes" rows="12" autoComplete="off"
+              className={`${baseInputClass} resize-none clean-scroll`}
               value={notes} onChange={(e) => setNotes(e.target.value)}
             ></motion.textarea>
           </div>
