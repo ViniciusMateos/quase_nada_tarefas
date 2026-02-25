@@ -11,7 +11,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 function DeleteConfirmModal({ task, onConfirm, onCancel }) {
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[60]">
       <motion.div initial={{ scale: 0.8, y: 50 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.8, y: 50 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="bg-gray-800 p-6 rounded-xl w-full max-w-sm border border-gray-700 shadow-2xl text-center">
         <h3 className="text-xl font-bold mb-3 text-red-500">Excluir Tarefa</h3>
         <p className="text-gray-300 mb-6">Tem certeza que deseja excluir a tarefa <br/><span className="text-white font-bold">"{task?.name}"</span>?</p>
@@ -192,11 +192,14 @@ function App() {
     exit: (dir) => ({ x: dir < 0 ? 100 : -100, opacity: 0 })
   };
 
+  // --- TELA DE LOGIN (CORRIGIDA) ---
   if (!session) {
     return (
       <div className="bg-gray-900 text-gray-100 min-h-screen flex items-center justify-center p-4">
+        {/* max-w-sm para manter o login pequeno e centralizado */}
         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-gray-800 p-8 rounded-2xl w-full max-w-sm border border-gray-700 shadow-2xl relative z-50">
           <h1 className="text-3xl font-bold text-center mb-8 text-laranja">quase nada tarefas</h1>
+          
           <form onSubmit={handleLogin} className="mb-6 relative z-50">
             <div className="relative mb-2">
               <input 
@@ -209,27 +212,41 @@ function App() {
                 onKeyUp={checkCapsLock}
                 className="w-full bg-gray-900 text-white p-4 pr-12 rounded-lg border border-gray-600 focus:outline-none focus:border-laranja focus:ring-1 focus:ring-laranja"
               />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
-                {showPassword ? "👁️" : "🙈"}
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white focus:outline-none">
+                {showPassword ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268-2.943 9.543 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268-2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                )}
               </button>
             </div>
             <div className="h-6 mb-4 text-center">
-              {capsLockOn ? <p className="text-yellow-500 text-xs">⚠️ Caps Lock ativado</p> : loginError ? <p className="text-red-500 text-sm">{loginError}</p> : null}
+              {capsLockOn ? <p className="text-yellow-500 text-xs font-bold uppercase tracking-wider">⚠️ Caps Lock ativado</p> : loginError ? <p className="text-red-500 text-sm">{loginError}</p> : null}
             </div>
-            <motion.button whileTap={{ scale: 0.95 }} type="submit" disabled={isLoggingIn} className="w-full bg-laranja text-white font-bold py-4 rounded-lg">
-              {isLoggingIn ? 'Entrando...' : 'Entrar'}
+            <motion.button whileTap={{ scale: 0.95 }} type="submit" disabled={isLoggingIn} className="w-full bg-laranja hover:opacity-80 text-white font-bold py-4 rounded-lg transition-opacity relative z-50">
+              {isLoggingIn ? 'Carregando...' : 'Entrar'}
             </motion.button>
           </form>
-          <button onClick={handleDemoMode} className="w-full text-gray-400 text-sm hover:underline">Entrar como Demonstração</button>
+
+          {/* O SEPARADOR "OU" QUE VOCÊ GOSTA */}
+          <div className="flex items-center my-6">
+            <div className="flex-1 border-t border-gray-700"></div>
+            <span className="px-4 text-gray-400 text-sm">ou</span>
+            <div className="flex-1 border-t border-gray-700"></div>
+          </div>
+
+          <motion.button whileTap={{ scale: 0.95 }} onClick={handleDemoMode} disabled={isLoggingIn} className="w-full bg-gray-900 hover:bg-gray-700 border border-gray-600 text-gray-300 font-bold py-4 rounded-lg transition-colors relative z-50">
+            Ambiente de Demonstração
+          </motion.button>
         </motion.div>
       </div>
     );
   }
 
+  // --- APP PRINCIPAL (Onde o scroll clean funciona) ---
   return (
     <div className="bg-gray-900 text-gray-100 h-screen flex flex-col antialiased overflow-hidden" {...handlers}>
       
-      {/* 1. ESTILO PARA TRAVAR O SAFARI */}
       <style>{`
         html, body { 
           overflow: hidden; 
@@ -238,11 +255,20 @@ function App() {
           width: 100%; 
           background-color: #111827;
         }
-        .custom-scroll::-webkit-scrollbar { width: 5px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar { 
+          width: 12px; 
+        }
+        .custom-scroll::-webkit-scrollbar-track { 
+          background: transparent; 
+        }
+        .custom-scroll::-webkit-scrollbar-thumb { 
+          background-color: #374151; 
+          border-radius: 20px; 
+          border: 4px solid #111827; 
+        }
       `}</style>
 
-      {/* HEADER FIXO (Não rola) */}
+      {/* HEADER FIXO */}
       <div className="max-w-2xl mx-auto w-full p-4 md:p-8 md:pb-4 pb-2 flex-shrink-0 z-10 bg-gray-900 relative">
         {session.type === 'demo' && (
           <button onClick={logoutDemo} className="hidden md:block absolute top-8 right-8 text-sm text-red-400 hover:text-red-300 font-bold transition-colors">Sair da Demo</button>
@@ -258,15 +284,14 @@ function App() {
         </div>
       </div>
 
-      {/* ÁREA DE ROLAGEM ÚNICA (Onde as tarefas e o botão de demo rolam juntos) */}
-      <div className="max-w-2xl mx-auto w-full flex-1 overflow-y-auto custom-scroll px-4 md:px-8 pb-10">
+      {/* PAINEL DE TAREFAS (Único lugar com scroll e respiro) */}
+      <div className="max-w-2xl mx-auto w-full flex-1 overflow-y-auto custom-scroll pl-4 pr-2 md:pl-8 md:pr-6 pb-10">
         <AnimatePresence initial={false} custom={direction} mode="wait">
           <motion.div key={currentWeekKey} custom={direction} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ type: "tween", duration: 0.25, ease: "easeOut" }}>
             <TaskList tasks={tasks} onEdit={openModal} onDelete={(task) => setTaskToDelete(task)} onToggleComplete={handleToggleComplete} />
           </motion.div>
         </AnimatePresence>
 
-        {/* BOTÃO MOBILE INTEGRADO NO SCROLL (Sempre no fim da lista) */}
         {session.type === 'demo' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="md:hidden py-10 flex justify-center pb-32">
             <button onClick={logoutDemo} className="text-red-500 bg-red-950/30 border border-red-900/50 px-8 py-3 rounded-full text-sm font-bold hover:bg-red-900/50 transition-colors shadow-lg">

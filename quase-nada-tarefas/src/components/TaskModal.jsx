@@ -22,98 +22,77 @@ function TaskModal({ task, onSave, onClose }) {
   };
 
   const inputFocusVariants = {
-    rest: { 
-      borderColor: '#4b5563', 
-      boxShadow: '0 0 0 0px rgba(255, 130, 52, 0)',
-      transition: { duration: 0.2 }
-    },
-    focus: { 
-      borderColor: '#ff8234',
-      boxShadow: '0 0 0 3px rgba(255, 130, 52, 0.3)',
-      transition: { duration: 0.2, ease: 'easeInOut' }
-    }
+    rest: { borderColor: '#4b5563', transition: { duration: 0.2 } },
+    focus: { borderColor: '#ff8234', transition: { duration: 0.2 } }
   };
   
-  // Adicionei "clean-scroll" aqui para usarmos na textarea
-  const baseInputClass = "w-full bg-gray-900 text-white p-3 rounded-lg border outline-none transition-colors";
-
-  const dropdownVariants = {
-    hidden: { opacity: 0, y: -10, scaleY: 0.8, transition: { duration: 0.2 } },
-    visible: { opacity: 1, y: 0, scaleY: 1, transition: { type: "spring", stiffness: 300, damping: 25 } }
-  };
+  const baseInputClass = "w-full bg-gray-900 text-white p-3 rounded-lg border border-gray-700 outline-none";
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-      
-      {/* 1. Mágica do Scroll (Injetando o CSS aqui dentro mesmo) */}
+    /* Overlay com Safe Area: pt e pb garantem que o modal não encoste na Dynamic Island nem na barra do Safari */
+    <motion.div 
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
+      className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[100] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+    >
       <style>{`
-        .clean-scroll::-webkit-scrollbar { width: 6px; }
-        .clean-scroll::-webkit-scrollbar-track { background: transparent; }
-        .clean-scroll::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 10px; }
+        .modal-scroll::-webkit-scrollbar { width: 4px; }
+        .modal-scroll::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 10px; }
       `}</style>
 
-      {/* 2. MUDANÇA: Troquei max-w-md por max-w-3xl para o modal crescer pros lados */}
-      <motion.div initial={{ scale: 0.8, opacity: 0, y: 50 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.8, opacity: 0, y: 50 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} 
-        className="bg-gray-800 p-8 rounded-xl w-full max-w-3xl border border-gray-700 shadow-2xl"
+      {/* Modal: max-h-full + overflow-y-auto impede que ele seja cortado se o texto for longo */}
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        className="bg-gray-800 p-6 rounded-2xl w-full max-w-3xl border border-gray-700 shadow-2xl overflow-y-auto max-h-full modal-scroll"
       >
         <h3 className="text-2xl font-bold mb-6 text-laranja">{task ? 'Editar Tarefa' : 'Nova Tarefa'}</h3>
         
-        <form onSubmit={handleSubmit} autoComplete="off">
-          <div className="mb-4">
-            <label htmlFor="task-name" className="block text-sm font-medium text-gray-400 mb-1">Nome da Tarefa</label>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1">Nome da Tarefa</label>
             <motion.input 
               variants={inputFocusVariants} initial="rest" whileFocus="focus"
-              type="text" id="task-name" required autoComplete="off"
+              type="text" required value={name} onChange={(e) => setName(e.target.value)}
               className={baseInputClass}
-              value={name} onChange={(e) => setName(e.target.value)}
             />
           </div>
           
-          <div className="mb-4 relative z-20">
+          <div className="relative z-50">
             <label className="block text-sm font-medium text-gray-400 mb-1">Prioridade</label>
-            <motion.button
-              type="button"
-              variants={inputFocusVariants} initial="rest" whileFocus="focus" animate={isDropdownOpen ? "focus" : "rest"}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            <button
+              type="button" onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className={`${baseInputClass} flex justify-between items-center`}
             >
-                <span className={`flex items-center gap-2 ${currentOption.colorClass}`}>
-                  <span className={`w-3 h-3 rounded-full bg-current opacity-80`}></span>
-                  {currentOption.label}
-                </span>
-                <motion.svg animate={{ rotate: isDropdownOpen ? 180 : 0 }} xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                </motion.svg>
-            </motion.button>
+              <span className={`flex items-center gap-2 ${currentOption.colorClass}`}>
+                <span className="w-2 h-2 rounded-full bg-current"></span>
+                {currentOption.label}
+              </span>
+              <span className={isDropdownOpen ? "rotate-180" : ""}>▼</span>
+            </button>
 
             <AnimatePresence>
               {isDropdownOpen && (
-                <motion.ul variants={dropdownVariants} initial="hidden" animate="visible" exit="hidden" style={{ originY: 0 }} className="absolute mt-2 w-full bg-gray-900 rounded-lg shadow-xl border border-gray-700 overflow-hidden">
-                  {priorityOptions.map((option) => (
-                    <motion.li key={option.value} whileHover={{ backgroundColor: '#374151' }} onClick={() => { setPriority(option.value); setIsDropdownOpen(false); }} className={`p-3 cursor-pointer flex items-center gap-2 ${option.colorClass} ${priority === option.value ? 'bg-gray-800 font-bold' : ''}`}>
-                      <span className={`w-3 h-3 rounded-full bg-current opacity-80`}></span>{option.label}
-                    </motion.li>
+                <motion.ul initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute mt-2 w-full bg-gray-900 rounded-lg border border-gray-700 overflow-hidden shadow-xl">
+                  {priorityOptions.map((opt) => (
+                    <li key={opt.value} onClick={() => { setPriority(opt.value); setIsDropdownOpen(false); }} className="p-3 hover:bg-gray-800 cursor-pointer text-gray-300">
+                      {opt.label}
+                    </li>
                   ))}
                 </motion.ul>
               )}
             </AnimatePresence>
           </div>
 
-          {/* 3. MUDANÇA: Aumentei rows para 12 e adicionei a classe clean-scroll */}
-          <div className="mb-6 z-10 relative">
-            <label htmlFor="task-notes" className="block text-sm font-medium text-gray-400 mb-1">Anotações</label>
-            <motion.textarea 
-              variants={inputFocusVariants} initial="rest" whileFocus="focus"
-              id="task-notes" rows="12" autoComplete="off"
-              className={`${baseInputClass} resize-none clean-scroll`}
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1">Anotações</label>
+            <textarea 
+              rows="8" className={`${baseInputClass} resize-none modal-scroll`}
               value={notes} onChange={(e) => setNotes(e.target.value)}
-            ></motion.textarea>
+            ></textarea>
           </div>
 
-          <div className="flex gap-3 z-10 relative">
-            <motion.button whileTap={{ scale: 0.95 }} type="submit" className="flex-1 bg-laranja hover:opacity-80 text-white font-bold py-3 px-4 rounded-lg transition-opacity">Salvar</motion.button>
-            <motion.button whileTap={{ scale: 0.95 }} type="button" onClick={onClose} className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">Cancelar</motion.button>
+          <div className="flex gap-3 pt-2">
+            <button type="submit" className="flex-1 bg-laranja text-white font-bold py-4 rounded-xl">Salvar</button>
+            <button type="button" onClick={onClose} className="flex-1 bg-gray-700 text-white font-bold py-4 rounded-xl">Cancelar</button>
           </div>
         </form>
       </motion.div>
