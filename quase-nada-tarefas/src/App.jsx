@@ -198,7 +198,7 @@ function App() {
     return (
       <div className="bg-gray-900 text-gray-100 min-h-screen flex items-center justify-center p-4">
         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-gray-800 p-8 rounded-2xl w-full max-w-sm border border-gray-700 shadow-2xl relative z-50">
-          <h1 className="text-3xl font-bold text-center mb-8 text-laranja">Quase Nada Tarefas</h1>
+          <h1 className="text-3xl font-bold text-center mb-8 text-laranja">quase nada tarefas</h1>
           <form onSubmit={handleLogin} className="mb-6 relative z-50">
             <div className="relative mb-2">
               <input 
@@ -251,7 +251,7 @@ function App() {
         {session.type === 'demo' && (
           <button onClick={logoutDemo} className="hidden md:block absolute top-8 right-8 text-sm text-red-400 hover:text-red-300 font-bold transition-colors">Sair da Demo</button>
         )}
-        <h1 className="text-3xl font-bold text-center mb-6 text-laranja">Quase Nada Tarefas</h1>
+        <h1 className="text-3xl font-bold text-center mb-6 text-laranja">quase nada tarefas</h1>
         
         <WeekNavigator currentDate={currentDate} changeWeek={changeWeek} setAbsoluteDate={setAbsoluteDate} />
 
