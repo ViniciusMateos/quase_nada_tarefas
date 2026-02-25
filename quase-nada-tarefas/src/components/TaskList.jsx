@@ -10,14 +10,12 @@ function TaskList({ tasks, onEdit, onDelete, onToggleComplete }) {
     );
   }
 
-  // Estilos do Card (Fundo escuro/transparente)
   const priorityClasses = {
     high: 'bg-red-950/40 border-red-500',
     medium: 'bg-yellow-950/40 border-yellow-500',
     low: 'bg-green-950/40 border-green-500'
   };
 
-  // Estilos do Checkbox QUANDO MARCADO (Cor sólida e viva)
   const checkboxColors = {
     high: 'bg-red-500 border-red-500',
     medium: 'bg-yellow-500 border-yellow-500',
@@ -35,11 +33,14 @@ function TaskList({ tasks, onEdit, onDelete, onToggleComplete }) {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           transition={{ duration: 0.2 }}
-          className={`flex items-center p-4 rounded-lg border-l-4 ${priorityClasses[task.priority]} ${task.completed ? 'opacity-40' : ''} select-none`}
+          /* 1. O CLIQUE AGORA ESTÁ NO CARD TODO E TEM CURSOR DE MÃO */
+          onClick={() => onEdit(task)}
+          className={`flex items-center p-4 rounded-lg border-l-4 ${priorityClasses[task.priority]} ${task.completed ? 'opacity-40' : ''} select-none cursor-pointer`}
         >
           {/* CHECKBOX PERSONALIZADO */}
           <label 
             className="relative flex items-center justify-center cursor-pointer flex-shrink-0 p-1"
+            /* 2. TRAVA O CLIQUE AQUI PARA NÃO ABRIR O MODAL AO MARCAR CHECK */
             onClick={(e) => e.stopPropagation()} 
           >
             <input 
@@ -49,12 +50,6 @@ function TaskList({ tasks, onEdit, onDelete, onToggleComplete }) {
               onChange={() => onToggleComplete(task)} 
             />
             
-            {/* Lógica da cor:
-                - Se completado: Usa a cor da prioridade (checkboxColors)
-                - Se não completado: Usa cinza escuro (bg-gray-700)
-                
-                Formato: rounded (quadrado com cantos arredondados)
-            */}
             <div className={`w-6 h-6 rounded border flex items-center justify-center transition-all duration-200 
               ${task.completed 
                 ? checkboxColors[task.priority] 
@@ -69,19 +64,18 @@ function TaskList({ tasks, onEdit, onDelete, onToggleComplete }) {
             </div>
           </label>
           
-          {/* Texto da Tarefa */}
-          <div 
-            className="flex-1 mx-4 cursor-pointer self-stretch flex items-center"
-            onClick={() => onEdit(task)}
-          >
+          {/* Texto da Tarefa - Apenas visual agora */}
+          <div className="flex-1 mx-4 self-stretch flex items-center">
             <span className={`text-gray-100 text-lg ${task.completed ? 'line-through text-gray-500' : ''}`}>
               {task.name}
             </span>
           </div>
           
           {/* Botões de Ação */}
-          <div className="flex items-center gap-3 flex-shrink-0" 
-               onPointerDown={(e) => e.stopPropagation()}
+          <div 
+            className="flex items-center gap-3 flex-shrink-0" 
+            /* 3. TRAVA O CLIQUE AQUI PARA NÃO ABRIR O MODAL AO CLICAR NOS BOTÕES */
+            onClick={(e) => e.stopPropagation()}
           >
             <button onClick={() => onEdit(task)} className="text-white hover:text-laranja transition-colors p-1" title="Editar">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
