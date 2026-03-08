@@ -12,6 +12,18 @@ function WeekNavigator({ currentDate, changeWeek, setAbsoluteDate }) {
   const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
   const fullMonths = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
+  // --- ALTERAÇÃO AQUI: Atalho para fechar no ESC ---
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') setIsPickerOpen(false);
+    };
+    if (isPickerOpen) {
+      window.addEventListener('keydown', handleEsc);
+    }
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isPickerOpen]);
+  // ------------------------------------------------
+
   useEffect(() => {
     const monday = new Date(currentDate);
     const day = monday.getDay();
@@ -175,7 +187,6 @@ function WeekNavigator({ currentDate, changeWeek, setAbsoluteDate }) {
                 </button>
               </div>
 
-              {/* CORREÇÃO AQUI: Adicionei padding (p-2) e overflow-x-hidden */}
               <div className="flex-1 overflow-y-auto p-2 overflow-x-hidden">
                 <AnimatePresence mode="wait">
                   {renderPickerContent()}
