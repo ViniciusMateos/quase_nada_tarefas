@@ -9,6 +9,10 @@ import TaskModal from './components/TaskModal';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+const LoadingSpinner = ({ size = "h-6 w-6" }) => (
+  <div className={`${size} border-4 border-gray-600 border-t-laranja rounded-full animate-spin`}></div>
+);
+
 function DeleteConfirmModal({ task, onConfirm, onCancel }) {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[110]">
@@ -27,7 +31,21 @@ function DeleteConfirmModal({ task, onConfirm, onCancel }) {
 function App() {
   const [tasks, setTasks] = useState([]);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [session, setSession] = useState(null); 
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(false);
   
+  const [passwordInput, setPasswordInput] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [capsLockOn, setCapsLockOn] = useState(false);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [taskToDelete, setTaskToDelete] = useState(null); // Variável unificada
+
+  const [direction, setDirection] = useState(0);
+
   function getWeekKey(date) {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     const dayNum = d.getUTCDay() || 7;
@@ -38,23 +56,9 @@ function App() {
   }
 
   const [currentWeekKey, setCurrentWeekKey] = useState(getWeekKey(new Date()));
-  const [direction, setDirection] = useState(0);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState(null);
-  const [taskToDelete, setTaskToDelete] = useState(null);
-
-  const [session, setSession] = useState(null); 
-  const [passwordInput, setPasswordInput] = useState('');
-  const [loginError, setLoginError] = useState('');
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  
-  const [showPassword, setShowPassword] = useState(false);
-  const [capsLockOn, setCapsLockOn] = useState(false);
 
   useEffect(() => {
-    if (window.location.pathname === '/demo' && !session) {
-      handleDemoMode();
-    }
+    if (window.location.pathname === '/demo' && !session) handleDemoMode();
   }, []); 
 
   useEffect(() => {
@@ -96,7 +100,7 @@ function App() {
       sessionStorage.setItem('qnt_demo', newDemoId);
       setSession({ type: 'demo', id: newDemoId });
     } catch (err) {
-      alert("Erro ao criar ambiente de demonstração.");
+      console.error("Erro demo");
     } finally {
       setIsLoggingIn(false);
     }
@@ -132,43 +136,41 @@ function App() {
     preventScrollOnSwipe: true,
   });
 
-  const fetchTasks = (weekKey) => {
+  const fetchTasks = async (weekKey) => {
     if (!API_URL || !session) return;
-    axios.get(`${API_URL}/api/tasks`, { params: { week: weekKey, session_id: session.id } })
-      .then(response => {
-        const priorityValues = { high: 1, medium: 2, low: 3 };
-        
-        // CORRIGINDO OS NOMES NO MODO DEMO
-        const processedTasks = response.data.map(t => {
-          if (session.type === 'demo') {
-            return {
-              ...t,
-              name: t.name
-                .replace('(Urgente)', '(Alta)')
-                .replace('(Importante)', '(Alta)')
-                .replace('(Normal)', '(Média)')
-                .replace('(Tranquilo)', '(Baixa)')
-            };
-          }
-          return t;
-        });
+    setIsLoadingTasks(true); 
+    try {
+      const response = await axios.get(`${API_URL}/api/tasks`, { params: { week: weekKey, session_id: session.id } });
+      const priorityValues = { high: 1, medium: 2, low: 3 };
+      const processedTasks = response.data.map(t => {
+        if (session.type === 'demo') {
+          return {
+            ...t,
+            name: t.name.replace('(Urgente)', '(Alta)').replace('(Importante)', '(Alta)').replace('(Normal)', '(Média)').replace('(Tranquilo)', '(Baixa)')
+          };
+        }
+        return t;
+      });
 
-        const sortedTasks = processedTasks.sort((a, b) => {
-           if (a.completed !== b.completed) return a.completed ? 1 : -1;
-           return priorityValues[a.priority] - priorityValues[b.priority];
-        });
-        setTasks(sortedTasks);
-      })
-      .catch(error => console.error(error));
+      const sortedTasks = processedTasks.sort((a, b) => {
+         if (a.completed !== b.completed) return a.completed ? 1 : -1;
+         return priorityValues[a.priority] - priorityValues[b.priority];
+      });
+      setTasks(sortedTasks);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoadingTasks(false);
+    }
   };
 
-  const handleSaveTask = (taskData) => {
+  const handleSaveTask = async (taskData) => {
     const taskPayload = { ...taskData, week_key: currentWeekKey, session_id: session.id };
     const request = editingTask 
       ? axios.put(`${API_URL}/api/tasks/${editingTask.id}`, taskPayload)
       : axios.post(`${API_URL}/api/tasks`, taskPayload);
 
-    request.then(() => { fetchTasks(currentWeekKey); closeModal(); });
+    await request.then(() => { fetchTasks(currentWeekKey); closeModal(); });
   };
 
   const confirmDeleteTask = () => {
@@ -180,7 +182,6 @@ function App() {
 
   const handleToggleComplete = (task) => {
     const isNowCompleted = !task.completed;
-    
     const updatedTasks = tasks.map(t => t.id === task.id ? { ...t, completed: isNowCompleted } : t);
     const priorityValues = { high: 1, medium: 2, low: 3 };
     const sortedTasks = updatedTasks.sort((a, b) => {
@@ -210,7 +211,11 @@ function App() {
   if (!session) {
     return (
       <div className="bg-gray-900 text-gray-100 min-h-screen flex items-center justify-center p-4">
-        <style>{`html, body { overflow: hidden; height: 100%; position: fixed; width: 100%; background-color: #111827; }`}</style>
+        {/* FIX BORDAS: outline none em tudo */}
+        <style>{`
+          html, body { overflow: hidden; height: 100%; position: fixed; width: 100%; background-color: #111827; }
+          * { outline: none !important; -webkit-tap-highlight-color: transparent; }
+        `}</style>
         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-gray-800 p-8 rounded-2xl w-full max-w-sm border border-gray-700 shadow-2xl relative z-50">
           <h1 className="text-3xl font-bold text-center mb-8 text-laranja">quase nada tarefas</h1>
           <form onSubmit={handleLogin} className="mb-6">
@@ -233,8 +238,12 @@ function App() {
             <div className="h-6 mb-4 text-center">
               {capsLockOn ? <p className="text-yellow-500 text-xs font-bold">⚠️ Caps Lock ativado</p> : loginError ? <p className="text-red-500 text-sm">{loginError}</p> : null}
             </div>
-            <motion.button whileTap={{ scale: 0.95 }} type="submit" disabled={isLoggingIn} className="w-full bg-laranja text-white font-bold py-4 rounded-lg">
-              {isLoggingIn ? 'Carregando...' : 'Entrar'}
+            
+            <motion.button 
+              whileTap={{ scale: 0.95 }} type="submit" disabled={isLoggingIn} 
+              className="w-full bg-laranja text-white font-bold py-4 rounded-lg flex items-center justify-center min-h-[60px]"
+            >
+              {isLoggingIn ? <LoadingSpinner size="h-8 w-8" /> : 'Entrar'}
             </motion.button>
           </form>
           <div className="flex items-center my-6">
@@ -251,13 +260,14 @@ function App() {
   return (
     <div className="bg-gray-900 text-gray-100 h-screen flex flex-col antialiased overflow-hidden" {...handlers}>
       
+      {/* FIX BORDAS: outline none em tudo */}
       <style>{`
         html, body { overflow: hidden; height: 100%; position: fixed; width: 100%; background-color: #111827; }
+        * { outline: none !important; -webkit-tap-highlight-color: transparent; }
         .custom-scroll::-webkit-scrollbar { width: 12px; }
         .custom-scroll::-webkit-scrollbar-thumb { background-color: #374151; border-radius: 20px; border: 4px solid #111827; }
       `}</style>
 
-      {/* HEADER FIXO */}
       <div className="max-w-2xl mx-auto w-full p-4 md:p-8 md:pb-4 pb-2 flex-shrink-0 z-10 bg-gray-900 relative">
         {session.type === 'demo' && (
           <button onClick={logoutDemo} className="hidden md:block absolute top-8 right-8 text-sm text-red-400 hover:text-red-300 font-bold transition-colors">Sair da Demo</button>
@@ -271,20 +281,27 @@ function App() {
         </div>
       </div>
 
-      {/* LISTA COM SCROLL ÚNICO */}
-      <div className="max-w-2xl mx-auto w-full flex-1 overflow-y-auto custom-scroll pl-4 pr-2 md:pl-8 md:pr-6 pb-10">
-        <AnimatePresence initial={false} custom={direction} mode="wait">
-          <motion.div key={currentWeekKey} custom={direction} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.25 }}>
-            <TaskList tasks={tasks} onEdit={openModal} onDelete={(task) => setTaskToDelete(task)} onToggleComplete={handleToggleComplete} />
-          </motion.div>
-        </AnimatePresence>
-
-        {session.type === 'demo' && (
-          <div className="md:hidden py-10 flex justify-center pb-32">
-            <button onClick={logoutDemo} className="text-red-500 bg-red-950/30 border border-red-900/50 px-8 py-3 rounded-full text-sm font-bold">
-              Encerrar Demonstração
-            </button>
+      <div className="max-w-2xl mx-auto w-full flex-1 overflow-y-auto custom-scroll pl-4 pr-2 md:pl-8 md:pr-6 pb-10 flex flex-col">
+        {isLoadingTasks ? (
+          <div className="flex-1 flex items-center justify-center py-20">
+            <LoadingSpinner size="h-16 w-16" />
           </div>
+        ) : (
+          <>
+            <AnimatePresence initial={false} custom={direction} mode="wait">
+              <motion.div key={currentWeekKey} custom={direction} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.25 }}>
+                <TaskList tasks={tasks} onEdit={openModal} onDelete={(task) => setTaskToDelete(task)} onToggleComplete={handleToggleComplete} />
+              </motion.div>
+            </AnimatePresence>
+
+            {session.type === 'demo' && (
+              <div className="md:hidden py-10 flex justify-center pb-32">
+                <button onClick={logoutDemo} className="text-red-500 bg-red-950/30 border border-red-900/50 px-8 py-3 rounded-full text-sm font-bold">
+                  Encerrar Demonstração
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 

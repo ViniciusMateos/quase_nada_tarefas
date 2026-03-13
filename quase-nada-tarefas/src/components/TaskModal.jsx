@@ -1,23 +1,24 @@
-import { useState, useEffect } from 'react'; // Adicionei o useEffect aqui
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Spinner normal
+const LoadingSpinner = ({ size = "h-6 w-6" }) => (
+  <div className={`${size} border-4 border-gray-600 border-t-laranja rounded-full animate-spin`}></div>
+);
 
 function TaskModal({ task, onSave, onClose }) {
   const [name, setName] = useState(task?.name || '');
   const [priority, setPriority] = useState(task?.priority || 'medium');
   const [notes, setNotes] = useState(task?.notes || '');
+  const [isSaving, setIsSaving] = useState(false); 
   
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // --- ATALHO PARA FECHAR NO ESC ---
   useEffect(() => {
     const handleEsc = (event) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
+      if (event.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleEsc);
-    
-    // Limpa o evento quando o modal fecha para não pesar no navegador
     return () => window.removeEventListener('keydown', handleEsc);
   }, [onClose]);
 
@@ -29,9 +30,14 @@ function TaskModal({ task, onSave, onClose }) {
 
   const currentOption = priorityOptions.find(opt => opt.value === priority);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave({ name, priority, notes });
+    setIsSaving(true); 
+    try {
+      await onSave({ name, priority, notes });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const inputFocusVariants = {
@@ -63,8 +69,7 @@ function TaskModal({ task, onSave, onClose }) {
             <motion.input 
               variants={inputFocusVariants} initial="rest" whileFocus="focus"
               type="text" required value={name} onChange={(e) => setName(e.target.value)}
-              className={baseInputClass}
-              autoComplete="off"
+              className={baseInputClass} autoComplete="off"
             />
           </div>
           
@@ -99,13 +104,20 @@ function TaskModal({ task, onSave, onClose }) {
             <textarea 
               rows="8" className={`${baseInputClass} resize-none modal-scroll`}
               value={notes} onChange={(e) => setNotes(e.target.value)}
-              placeholder="Ex: Braddock dan, leall niink..."
+              placeholder="Descreva aqui..."
             ></textarea>
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button type="submit" className="flex-1 bg-laranja text-white font-bold py-4 rounded-xl hover:opacity-90 active:scale-95 transition-all">Salvar</button>
-            <button type="button" onClick={onClose} className="flex-1 bg-gray-700 text-white font-bold py-4 rounded-xl hover:bg-gray-600 active:scale-95 transition-all">Cancelar</button>
+            <button 
+              type="submit" disabled={isSaving}
+              className="flex-1 bg-laranja text-white font-bold py-4 rounded-xl min-h-[60px] flex items-center justify-center"
+            >
+              {isSaving ? <LoadingSpinner size="h-8 w-8" /> : 'Salvar'}
+            </button>
+            <button type="button" onClick={onClose} disabled={isSaving} className="flex-1 bg-gray-700 text-white font-bold py-4 rounded-xl">
+              Cancelar
+            </button>
           </div>
         </form>
       </motion.div>
