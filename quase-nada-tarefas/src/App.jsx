@@ -51,6 +51,13 @@ function App() {
   const [showPassword, setShowPassword] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
 
+  // --- DETECÇÃO DE ROTA /DEMO ---
+  useEffect(() => {
+    if (window.location.pathname === '/demo' && !session) {
+      handleDemoMode();
+    }
+  }, []); 
+
   useEffect(() => {
     const savedAuth = localStorage.getItem('qnt_auth');
     if (savedAuth) {
@@ -99,6 +106,7 @@ function App() {
   const logoutDemo = () => {
     sessionStorage.removeItem('qnt_demo');
     setSession(null);
+    window.history.pushState({}, '', '/'); // Limpa o /demo da URL
   };
 
   const checkCapsLock = (e) => {
@@ -123,7 +131,6 @@ function App() {
     onSwipedLeft: () => changeWeek(7),
     onSwipedRight: () => changeWeek(-7),
     preventScrollOnSwipe: true,
-    trackMouse: false
   });
 
   const fetchTasks = (weekKey) => {
@@ -146,10 +153,7 @@ function App() {
       ? axios.put(`${API_URL}/api/tasks/${editingTask.id}`, taskPayload)
       : axios.post(`${API_URL}/api/tasks`, taskPayload);
 
-    request.then(() => {
-      fetchTasks(currentWeekKey);
-      closeModal();
-    });
+    request.then(() => { fetchTasks(currentWeekKey); closeModal(); });
   };
 
   const confirmDeleteTask = () => {
@@ -161,9 +165,7 @@ function App() {
 
   const handleToggleComplete = (task) => {
     const isNowCompleted = !task.completed;
-    const updatedTasks = tasks.map(t => 
-      t.id === task.id ? { ...t, completed: isNowCompleted } : t
-    );
+    const updatedTasks = tasks.map(t => t.id === task.id ? { ...t, completed: isNowCompleted } : t);
     setTasks(updatedTasks);
     axios.put(`${API_URL}/api/tasks/${task.id}`, { ...task, completed: isNowCompleted }).catch(() => fetchTasks(currentWeekKey));
   };
@@ -179,20 +181,12 @@ function App() {
     exit: (dir) => ({ x: dir < 0 ? 100 : -100, opacity: 0 })
   };
 
-  // --- TELA DE LOGIN (COM BLOQUEIO DE SCROLL) ---
   if (!session) {
     return (
       <div className="bg-gray-900 text-gray-100 min-h-screen flex items-center justify-center p-4">
-        
-        {/* BLOQUEIO DO SAFARI NO LOGIN */}
-        <style>{`
-          html, body { overflow: hidden; height: 100%; position: fixed; width: 100%; background-color: #111827; }
-        `}</style>
-
-        {/* max-w-sm fixado para não esticar no desktop */}
+        <style>{`html, body { overflow: hidden; height: 100%; position: fixed; width: 100%; background-color: #111827; }`}</style>
         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-gray-800 p-8 rounded-2xl w-full max-w-sm border border-gray-700 shadow-2xl relative z-50">
           <h1 className="text-3xl font-bold text-center mb-8 text-laranja">quase nada tarefas</h1>
-          
           <form onSubmit={handleLogin} className="mb-6">
             <div className="relative mb-2">
               <input 
@@ -217,13 +211,9 @@ function App() {
               {isLoggingIn ? 'Carregando...' : 'Entrar'}
             </motion.button>
           </form>
-
           <div className="flex items-center my-6">
-            <div className="flex-1 border-t border-gray-700"></div>
-            <span className="px-4 text-gray-400 text-sm">ou</span>
-            <div className="flex-1 border-t border-gray-700"></div>
+            <div className="flex-1 border-t border-gray-700"></div><span className="px-4 text-gray-400 text-sm">ou</span><div className="flex-1 border-t border-gray-700"></div>
           </div>
-
           <motion.button whileTap={{ scale: 0.95 }} onClick={handleDemoMode} className="w-full bg-gray-900 border border-gray-600 text-gray-300 font-bold py-4 rounded-lg">
             Ambiente de Demonstração
           </motion.button>
@@ -242,7 +232,13 @@ function App() {
       `}</style>
 
       {/* HEADER FIXO */}
-      <div className="max-w-2xl mx-auto w-full p-4 md:p-8 md:pb-4 pb-2 flex-shrink-0 z-10 bg-gray-900">
+      <div className="max-w-2xl mx-auto w-full p-4 md:p-8 md:pb-4 pb-2 flex-shrink-0 z-10 bg-gray-900 relative">
+        
+        {/* BOTÃO DESKTOP (SÓ APARECE NO MODO DEMO) */}
+        {session.type === 'demo' && (
+          <button onClick={logoutDemo} className="hidden md:block absolute top-8 right-8 text-sm text-red-400 hover:text-red-300 font-bold transition-colors">Sair da Demo</button>
+        )}
+
         <h1 className="text-3xl font-bold text-center mb-6 text-laranja">quase nada tarefas</h1>
         <WeekNavigator currentDate={currentDate} changeWeek={changeWeek} setAbsoluteDate={setAbsoluteDate} />
         <div className="mb-2 text-center">
@@ -260,6 +256,7 @@ function App() {
           </motion.div>
         </AnimatePresence>
 
+        {/* BOTÃO MOBILE (SÓ APARECE NO MODO DEMO) */}
         {session.type === 'demo' && (
           <div className="md:hidden py-10 flex justify-center pb-32">
             <button onClick={logoutDemo} className="text-red-500 bg-red-950/30 border border-red-900/50 px-8 py-3 rounded-full text-sm font-bold">
