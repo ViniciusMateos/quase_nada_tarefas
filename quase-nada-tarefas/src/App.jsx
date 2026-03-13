@@ -137,7 +137,23 @@ function App() {
     axios.get(`${API_URL}/api/tasks`, { params: { week: weekKey, session_id: session.id } })
       .then(response => {
         const priorityValues = { high: 1, medium: 2, low: 3 };
-        const sortedTasks = response.data.sort((a, b) => {
+        
+        // CORRIGINDO OS NOMES NO MODO DEMO
+        const processedTasks = response.data.map(t => {
+          if (session.type === 'demo') {
+            return {
+              ...t,
+              name: t.name
+                .replace('(Urgente)', '(Alta)')
+                .replace('(Importante)', '(Alta)')
+                .replace('(Normal)', '(Média)')
+                .replace('(Tranquilo)', '(Baixa)')
+            };
+          }
+          return t;
+        });
+
+        const sortedTasks = processedTasks.sort((a, b) => {
            if (a.completed !== b.completed) return a.completed ? 1 : -1;
            return priorityValues[a.priority] - priorityValues[b.priority];
         });
@@ -162,32 +178,22 @@ function App() {
     setTaskToDelete(null);
   };
 
-  // --- FUNÇÃO CORRIGIDA (ORDENAÇÃO + PERSISTÊNCIA) ---
   const handleToggleComplete = (task) => {
     const isNowCompleted = !task.completed;
     
-    // 1. Atualiza e Ordena LOCALMENTE na hora para a animação do Framer Motion rolar
-    const updatedTasks = tasks.map(t => 
-      t.id === task.id ? { ...t, completed: isNowCompleted } : t
-    );
-    
+    const updatedTasks = tasks.map(t => t.id === task.id ? { ...t, completed: isNowCompleted } : t);
     const priorityValues = { high: 1, medium: 2, low: 3 };
     const sortedTasks = updatedTasks.sort((a, b) => {
-      if (a.completed !== b.completed) return a.completed ? 1 : -1;
-      return priorityValues[a.priority] - priorityValues[b.priority];
+       if (a.completed !== b.completed) return a.completed ? 1 : -1;
+       return priorityValues[a.priority] - priorityValues[b.priority];
     });
-    
     setTasks([...sortedTasks]);
 
-    // 2. Persistência: Enviamos o week_key atual para a tarefa não "sumir" do filtro GET
-    const taskPayload = { 
+    axios.put(`${API_URL}/api/tasks/${task.id}`, { 
       ...task, 
       completed: isNowCompleted,
       week_key: currentWeekKey 
-    };
-
-    axios.put(`${API_URL}/api/tasks/${task.id}`, taskPayload)
-      .catch(() => fetchTasks(currentWeekKey));
+    }).catch(() => fetchTasks(currentWeekKey));
   };
 
   const openModal = (task = null) => { setEditingTask(task); setIsModalOpen(true); };
