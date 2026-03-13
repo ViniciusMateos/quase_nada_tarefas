@@ -51,7 +51,6 @@ function App() {
   const [showPassword, setShowPassword] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
 
-  // --- DETECÇÃO DE ROTA /DEMO ---
   useEffect(() => {
     if (window.location.pathname === '/demo' && !session) {
       handleDemoMode();
@@ -106,7 +105,7 @@ function App() {
   const logoutDemo = () => {
     sessionStorage.removeItem('qnt_demo');
     setSession(null);
-    window.history.pushState({}, '', '/'); // Limpa o /demo da URL
+    window.history.pushState({}, '', '/');
   };
 
   const checkCapsLock = (e) => {
@@ -163,11 +162,32 @@ function App() {
     setTaskToDelete(null);
   };
 
+  // --- FUNÇÃO CORRIGIDA (ORDENAÇÃO + PERSISTÊNCIA) ---
   const handleToggleComplete = (task) => {
     const isNowCompleted = !task.completed;
-    const updatedTasks = tasks.map(t => t.id === task.id ? { ...t, completed: isNowCompleted } : t);
-    setTasks(updatedTasks);
-    axios.put(`${API_URL}/api/tasks/${task.id}`, { ...task, completed: isNowCompleted }).catch(() => fetchTasks(currentWeekKey));
+    
+    // 1. Atualiza e Ordena LOCALMENTE na hora para a animação do Framer Motion rolar
+    const updatedTasks = tasks.map(t => 
+      t.id === task.id ? { ...t, completed: isNowCompleted } : t
+    );
+    
+    const priorityValues = { high: 1, medium: 2, low: 3 };
+    const sortedTasks = updatedTasks.sort((a, b) => {
+      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      return priorityValues[a.priority] - priorityValues[b.priority];
+    });
+    
+    setTasks([...sortedTasks]);
+
+    // 2. Persistência: Enviamos o week_key atual para a tarefa não "sumir" do filtro GET
+    const taskPayload = { 
+      ...task, 
+      completed: isNowCompleted,
+      week_key: currentWeekKey 
+    };
+
+    axios.put(`${API_URL}/api/tasks/${task.id}`, taskPayload)
+      .catch(() => fetchTasks(currentWeekKey));
   };
 
   const openModal = (task = null) => { setEditingTask(task); setIsModalOpen(true); };
@@ -233,12 +253,9 @@ function App() {
 
       {/* HEADER FIXO */}
       <div className="max-w-2xl mx-auto w-full p-4 md:p-8 md:pb-4 pb-2 flex-shrink-0 z-10 bg-gray-900 relative">
-        
-        {/* BOTÃO DESKTOP (SÓ APARECE NO MODO DEMO) */}
         {session.type === 'demo' && (
           <button onClick={logoutDemo} className="hidden md:block absolute top-8 right-8 text-sm text-red-400 hover:text-red-300 font-bold transition-colors">Sair da Demo</button>
         )}
-
         <h1 className="text-3xl font-bold text-center mb-6 text-laranja">quase nada tarefas</h1>
         <WeekNavigator currentDate={currentDate} changeWeek={changeWeek} setAbsoluteDate={setAbsoluteDate} />
         <div className="mb-2 text-center">
@@ -256,7 +273,6 @@ function App() {
           </motion.div>
         </AnimatePresence>
 
-        {/* BOTÃO MOBILE (SÓ APARECE NO MODO DEMO) */}
         {session.type === 'demo' && (
           <div className="md:hidden py-10 flex justify-center pb-32">
             <button onClick={logoutDemo} className="text-red-500 bg-red-950/30 border border-red-900/50 px-8 py-3 rounded-full text-sm font-bold">
